@@ -5,7 +5,7 @@ package compilerLALG.syntactic;
  */
 public class NotTerminal {
 	
-	public static final int PROG = 0;
+	public static final int PROGRAM = 0;
 	public static final int BLOCO = 1;
 	public static final int BLOCO_ = 2;
 	public static final int TIPO = 3;
@@ -42,8 +42,9 @@ public class NotTerminal {
 	public static final int IDENT = 34;
 	public static final int INT = 35;
 	public static final int REAL = 36;
+	public static final int BOOLEAN = 37;
 	
-	public static final int TOTAL = 37;
+	public static final int TOTAL = 38;
 	
 	/**
 	 * Retorna o index na tabela de gramática para o simbolo não terminal passado por parâmetro
@@ -56,7 +57,7 @@ public class NotTerminal {
 		
 		switch (notTerminal.trim()) {
 		
-			case "<prog>":          return PROG;				
+			case "<prog>":          return PROGRAM;				
 			case "<bloco>":         return BLOCO;
 			case "<bloco_>":        return BLOCO_;
 			case "<tipo>":          return TIPO;
@@ -92,7 +93,8 @@ public class NotTerminal {
 			case "<list_exp_>":     return LIST_EXP_;
 			case "<ident>":         return IDENT;
 			case "<int>":           return INT;
-			case "<real>":          return REAL;		
+			case "<real>":          return REAL;
+			case "<boolean>":		return BOOLEAN;
 			default:                return -1;
 		}
 		

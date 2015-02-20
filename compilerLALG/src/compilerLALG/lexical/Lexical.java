@@ -1,6 +1,7 @@
 package compilerLALG.lexical;
 import java.util.ArrayList;
 
+import compilerLALG.errors.CompilerError;
 import compilerLALG.reservedWords.ReservedWords;
 
 /**
@@ -9,7 +10,14 @@ import compilerLALG.reservedWords.ReservedWords;
 public class Lexical {
 	
 	private ArrayList<Token> tokens;
-	private ArrayList<Token> lexicalErrors;
+	private ArrayList<CompilerError> lexicalErrors;
+	
+	/**
+	 * Cria o objeto para realizar a análise léxica
+	 */
+	public Lexical() {
+		tokens = new ArrayList<Token>();
+	}
 			
 	/**
 	 * Executa a análise léxica em um código fonte passado por parâmetro 
@@ -17,7 +25,7 @@ public class Lexical {
 	 * @param source O código-fonte a ser extraídos os tokens
 	 */
 	public void execute(String source) {
-		
+				
 		tokens = new ArrayList<Token>();
 		StringBuffer buffer = new StringBuffer();
 		
@@ -173,6 +181,16 @@ public class Lexical {
 		
 		ArrayList<Token> tokens = new ArrayList<Token>();
 		
+		for(Token t : this.tokens) {
+			
+			int tokenType = t.getType();
+			
+			if(!(tokenType == Token.BLOCK_COMMENT || tokenType == Token.LINE_COMMENT)) {
+				tokens.add(t);
+			}
+			
+		}
+		
 		return tokens;
 		
 	}
@@ -182,15 +200,23 @@ public class Lexical {
 	 */
 	public void setLexicalErrors() {
 		
-		lexicalErrors = new ArrayList<Token>();
+		lexicalErrors = new ArrayList<CompilerError>();
 		
 		for(Token token : tokens) {
 			
 			int tokenType = token.getType();
 			
-			if(tokenType == Token.UNKNOWN || tokenType == Token.MALFORMED_IDENTIFIER || 
-			   tokenType == Token.MALFORMED_INTEGER_NUMBER || tokenType == Token.MALFORMED_REAL_NUMBER) {
-				lexicalErrors.add(token);
+			if(tokenType == Token.UNKNOWN) {
+				lexicalErrors.add(new CompilerError(CompilerError.LEXICAL, token, "Token inválido"));
+			}
+			else if(tokenType == Token.MALFORMED_IDENTIFIER) {
+				lexicalErrors.add(new CompilerError(CompilerError.LEXICAL, token, "Identificador inválido")); 
+			}
+			else if(tokenType == Token.MALFORMED_INTEGER_NUMBER) {
+				lexicalErrors.add(new CompilerError(CompilerError.LEXICAL, token, "Número inteiro inválido")); 
+			}
+			else if(tokenType == Token.MALFORMED_REAL_NUMBER) {
+				lexicalErrors.add(new CompilerError(CompilerError.LEXICAL, token, "Número real inválido"));
 			}
 		}
 					
@@ -201,7 +227,7 @@ public class Lexical {
 	 * 
 	 * @return A lista de erros léxicos encontrados na análise
 	 */
-	public ArrayList<Token> getLexicalErrors() {
+	public ArrayList<CompilerError> getLexicalErrors() {
 		return lexicalErrors;	
 	}
 

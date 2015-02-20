@@ -8,7 +8,7 @@ import compilerLALG.reservedWords.ReservedWords;
 /**
  * Representa um token utilizado para a análise léxica
  */
-public class Token implements Cloneable {
+public class Token {
 	
 	public static final int REAL_NUMBER = 0;
 	public static final int INTEGER_NUMBER = 1;
@@ -22,6 +22,7 @@ public class Token implements Cloneable {
 	public static final int MALFORMED_IDENTIFIER = 9;
 	public static final int UNKNOWN = 10;
 	public static final int EMPTY = 11;
+	public static final int BOOLEAN_VALUE = 12;
 		
 	private String token;
 	private int startLine;
@@ -87,6 +88,11 @@ public class Token implements Cloneable {
 		Matcher blockComment = Pattern.compile("\\{.*\\}").matcher(token);
 		Matcher lineComment = Pattern.compile("//.*").matcher(token);
 		Matcher identifier = Pattern.compile("([a-zA-Z]|_)([a-zA-Z]|\\d||_)*").matcher(token);
+		
+		if(token.equals("true") || token.equals("false")) {
+			type = BOOLEAN_VALUE;
+			return;
+		}
 		
 		if(real.matches()) {
 			
@@ -164,6 +170,7 @@ public class Token implements Cloneable {
 			case MALFORMED_INTEGER_NUMBER: 	return "Número Inteiro mal formado";
 			case MALFORMED_IDENTIFIER:		return "Identificador mal formado";
 			case EMPTY:						return "Final de Cadeia";
+			case BOOLEAN_VALUE:				return "Valor Boleano";
 			default: 						return "Token Inválido";
 			
 		}
@@ -275,9 +282,4 @@ public class Token implements Cloneable {
 		return "Token [token=>" + token + "<, type=" + getTokenType() + "]";
 	}
 	
-	@Override
-	public Token clone() {
-		return new Token(this);
-	}
-
 }

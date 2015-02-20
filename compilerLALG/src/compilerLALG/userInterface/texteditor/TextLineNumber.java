@@ -1,4 +1,4 @@
-package compilerLALG.userInterface;
+package compilerLALG.userInterface.texteditor;
 
 import java.awt.Color;
 import java.awt.Dimension;

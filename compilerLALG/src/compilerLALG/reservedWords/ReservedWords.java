@@ -51,8 +51,11 @@ public class ReservedWords {
 		ArrayList<String> reservedWords = new ArrayList<String>();
 		
 		reservedWords.add("program");
-		reservedWords.add("integer");
+		reservedWords.add("int");
 		reservedWords.add("real");
+		reservedWords.add("boolean");
+		reservedWords.add("true");
+		reservedWords.add("false");
 		reservedWords.add("procedure");
 		reservedWords.add("var");
 		reservedWords.add("begin");

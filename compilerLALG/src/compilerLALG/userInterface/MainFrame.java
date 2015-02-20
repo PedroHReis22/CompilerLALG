@@ -22,6 +22,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -36,10 +37,12 @@ import javax.swing.event.CaretListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
+import compilerLALG.errors.CompilerError;
 import compilerLALG.lexical.Lexical;
 import compilerLALG.lexical.Token;
 import compilerLALG.syntactic.Syntactic;
-import compilerLALG.syntactic.SyntaticError;
+import compilerLALG.userInterface.texteditor.LinePainter;
+import compilerLALG.userInterface.texteditor.TextLineNumber;
 import compilerLALG.util.Clipboard;
 import compilerLALG.util.ReadFile;
 import compilerLALG.util.SaveFile;
@@ -70,6 +73,7 @@ public class MainFrame extends JFrame {
 	private JButton btnCompile;
 	
 	private Lexical lexical;
+	private Syntactic syntactic;
 	
 	private ArrayList<Boolean> errors;
 	
@@ -79,17 +83,11 @@ public class MainFrame extends JFrame {
 	public MainFrame() {
 		
 		fileChooser = new FileChooser();
-		errors = new ArrayList<>();		
-		
+		errors = new ArrayList<>();	
+				
 		initialize();
-		setListeners();	
-		
-//		txSource.setText("program nome_programa; "
-//				+ "var a, b : integer; "
-//				+ "c : real;"
-//				+ "begin "
-//				+ "if +(");
-//		compile();
+		setListeners();
+						
 	}
 
 	/**
@@ -98,7 +96,7 @@ public class MainFrame extends JFrame {
 	private void initialize() {
 		
 		setBounds(100, 100, 750, 600);
-		setMinimumSize(new Dimension(750, 600));
+		setMinimumSize(new Dimension(900, 650));
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
 		setTitle("Compilador LALG");
@@ -142,8 +140,10 @@ public class MainFrame extends JFrame {
 		textAreaPanel.setViewportView(txSource);
 		
 		TextLineNumber tln = new TextLineNumber(txSource);
-		textAreaPanel.setRowHeaderView(tln);																																												
+		textAreaPanel.setRowHeaderView(tln);	
 		
+		new LinePainter(txSource);
+				
 		lblCarretPosition = new JLabel("1 : 1");
 		getContentPane().add(lblCarretPosition, BorderLayout.SOUTH);
 		
@@ -166,11 +166,21 @@ public class MainFrame extends JFrame {
 			}
 		
 		});
-	
+			
 		errorsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		errorsTable.setCellSelectionEnabled(true);
 		errorsTable.getTableHeader().setReorderingAllowed(false);
-
+		
+		int widths[] = new int[]{75, 120};
+		for(int i = 0; i < widths.length; ++i) {
+			errorsTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
+			errorsTable.getColumnModel().getColumn(i).setMinWidth(widths[i]);
+			errorsTable.getColumnModel().getColumn(i).setMaxWidth(widths[i]);
+		}
+				
+		errorsTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+		errorsTable.getColumnModel().getColumn(3).setPreferredWidth(250);		
+		
 		JScrollPane logPanel = new JScrollPane();
 		logPanel.setViewportView(errorsTable);
 		tabbedPane.addTab("Log de Erros", logPanel);
@@ -227,9 +237,19 @@ public class MainFrame extends JFrame {
 		lexemeTable.setCellSelectionEnabled(true);
 		lexemeTable.getTableHeader().setReorderingAllowed(false);
 		
+		lexemeTable.getColumnModel().getColumn(0).setPreferredWidth(250);
+		lexemeTable.getColumnModel().getColumn(1).setPreferredWidth(150);
+		
+		widths = new int[]{90, 90, 90, 100};
+		for(int i = 2; i < lexemeTable.getColumnCount(); ++i) {
+			lexemeTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i - 2]);
+			lexemeTable.getColumnModel().getColumn(i).setMinWidth(widths[i - 2]);
+			lexemeTable.getColumnModel().getColumn(i).setMaxWidth(widths[i - 2]);
+		}
+		
 		tablePanel.setViewportView(lexemeTable);
 		contentPanel.setLayout(layout);
-		
+				
 		JToolBar toolBar = new JToolBar();
 		getContentPane().add(toolBar, BorderLayout.NORTH);
 		
@@ -312,10 +332,10 @@ public class MainFrame extends JFrame {
         });
 		
 		txSource.addKeyListener(new KeyAdapter() {
-			
+						
 			@Override
 			public void keyPressed(KeyEvent e) {
-				
+								
 				if(e.getKeyChar() == '\t') { //pressionado tab, é substituido por 8 espaços
 										
 					e.consume();
@@ -392,13 +412,24 @@ public class MainFrame extends JFrame {
 	 * Executa a compilação do código fonte disponível
 	 */
 	private void compile() {
+				
+		boolean success;
+		
+		txSource.setCaretPosition(txSource.getText().length());
 		
 		removeAllTableRows(lexemeTable);
 		removeAllTableRows(errorsTable);
 		errors.removeAll(errors);
-				
-		if(!lexicalAnalyzer()) return;
-		syntacticAnalyzer();
+		
+		success = lexicalAnalyzer();
+		if(success) success = syntacticAnalyzer();
+								
+		if(success) {
+			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);
+		}
+		else {
+			JOptionPane.showMessageDialog(this, "Compilação retornou erro", "Erro ao compilar", JOptionPane.ERROR_MESSAGE);
+		}
 		
 	}
 	
@@ -407,21 +438,35 @@ public class MainFrame extends JFrame {
 	 * 
 	 * @return true se a análise não encontrou erros e fase se foram encontrados erros
 	 */
-	private boolean lexicalAnalyzer() {		
-		
-		if(txSource.getText() == null || txSource.getText().isEmpty()) return false;
+	private boolean lexicalAnalyzer() {
 		
 		lexical = new Lexical();
+		
+		if(txSource.getText() == null || txSource.getText().isEmpty()) return true;
+		
 		lexical.execute(txSource.getText());
 		
 		ArrayList<Token> tokens = lexical.getTokens();
-		ArrayList<Token> lexicalErrors = lexical.getLexicalErrors();
+		ArrayList<CompilerError> lexicalErrors = lexical.getLexicalErrors();
 		
 		setLexemes(tokens);
-		setLexicalErrors(lexicalErrors);
-						
-		for(Token token : tokens) errors.add(lexicalErrors.contains(token));
-		
+		setErrors(lexicalErrors);
+
+		int index = 0;
+		for(Token token : tokens) {			
+			
+			errors.add(false);
+			
+			for(CompilerError compilerError : lexicalErrors) {
+				if(compilerError.getToken().equals(token)) {
+					errors.set(index, true);
+					break;
+				}
+			}
+			
+			++index;
+		}
+				
 		return (!errors.contains(true));
 		
 	}
@@ -432,53 +477,42 @@ public class MainFrame extends JFrame {
 	 */
 	private boolean syntacticAnalyzer() {
 				
-//		tokens.add(new Token("$", 0, 0));
-//		
-//		Syntactic syntactic = new Syntactic(); 
-//		ArrayList<SyntaticError> syntaticErrors = syntactic.execute(tokens);
-//		
-//		for(int row = 0; row < syntaticErrors.size(); ++row) {
-//			
-//			SyntaticError syntaticError = syntaticErrors.get(row);
-//			
-//			addErrosTableRow();
-//			
-//			errorsTable.setValueAt(syntaticError.getToken().getStartLine() + ":" + syntaticError.getToken().getStartColumn(), row, 0);
-//			errorsTable.setValueAt("Erro Sintático", row, 1);
-//			errorsTable.setValueAt(syntaticError.getToken().getToken(), row, 3);
-//			errorsTable.setValueAt(syntaticError.getError(), row, 3);
-//			
-//		}
+		ArrayList<Token> tokens = lexical.getTokensWithoutComment();
+		tokens.add(new Token("$", 0, 0));
 		
-		return true;
+		syntactic = new Syntactic();
+		syntactic.execute(tokens);
+		
+		ArrayList<CompilerError> syntaticErrors = syntactic.getSyntaticErrors(); 
+		setErrors(syntaticErrors);
+				
+		return syntaticErrors.size() == 0;
 		
 	}
 	
 	/**
-	 * Define na tabela de erros, os erros encontrados na análise léxica
+	 * Define na tabela de erros, os erros encontrados em alguma das etapas de compilação
 	 * 
-	 * @param errors Os erros encontrados durante a análise léxica
+	 * @param errors Os erros encontrados durante a compilação
 	 */
-	private void setLexicalErrors(ArrayList<Token> errors) {
+	private void setErrors(ArrayList<CompilerError> errors) {
 		
-		int row = 0;
-		for(Token token : errors) {
+		int row = errorsTable.getRowCount();
+		
+		for(CompilerError error : errors) {
 			
-			int tokenType = token.getType();
+			Token token = error.getToken();
 			
 			DefaultTableModel model = (DefaultTableModel) errorsTable.getModel();
 			model.addRow(new Object[]{null, null, null, null, null, null});
 			
 			errorsTable.setValueAt(token.getStartLine() + ":" + token.getStartColumn(), row, 0);
-			errorsTable.setValueAt("Erro léxico", row, 1);
+			errorsTable.setValueAt(error.getErrorTypeStr(), row, 1);
 			errorsTable.setValueAt(token.getToken(), row, 2);
-			
-			if(tokenType == Token.UNKNOWN) errorsTable.setValueAt("Token inválido", row++, 3);
-			else if(tokenType == Token.MALFORMED_IDENTIFIER) errorsTable.setValueAt("Identificador inválido", row++, 3);
-			else if(tokenType == Token.MALFORMED_INTEGER_NUMBER) errorsTable.setValueAt("Número inteiro inválido", row++, 3);
-			else if(tokenType == Token.MALFORMED_REAL_NUMBER) errorsTable.setValueAt("Número real inválido", row++, 3);
+			errorsTable.setValueAt(error.getErrorMessage(), row++, 3);
 			
 		}
+				
 	}
 	
 	/**
@@ -524,6 +558,6 @@ public class MainFrame extends JFrame {
 	 */
 	private void exit() {
 		System.exit(0);
-	}
-
+	}	
+	
 }

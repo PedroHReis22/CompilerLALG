@@ -35,16 +35,11 @@ public class ReadFile {
 			FileReader fileReader = new FileReader(file);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			
-			String line = bufferedReader.readLine();
-			
-			do {
-				
+			String line;
+			while((line = bufferedReader.readLine()) != null) {
 				buffer.append(line + "\n");
-				line = bufferedReader.readLine();
-				
-				
-			} while(line != null);
-			
+			}
+						
 			bufferedReader.close();
 			fileReader.close();
 			

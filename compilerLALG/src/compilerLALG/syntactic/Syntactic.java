@@ -98,7 +98,7 @@ public class Syntactic {
 								
 		while(!stack.isEmpty()) {
 			
-			if(simbol.startsWith("<")&& simbol.endsWith(">")&& simbol.length() > 2){ //é um simbolo não terminal
+			if(simbol.startsWith("<") && simbol.endsWith(">") && simbol.length() > 2){ //é um simbolo não terminal
 				
 				int nt = NotTerminal.getIndex(simbol);
 				int t = Terminal.getIndex(token);
@@ -197,7 +197,9 @@ public class Syntactic {
 		}
 		
 		else if(derivation.getType() == Derivation.SYNC) { //derivação de sincronização. Simbolo não terminal é descartado
-			syntaticErrors.add(new CompilerError(CompilerError.SYNTATIC, token, "Sincronização"));
+						
+			String message = SyntaticError.getErrorMessage(simbol);
+			syntaticErrors.add(new CompilerError(CompilerError.SYNTATIC, token, message));
 			simbol = stack.pop();
 		}
 			

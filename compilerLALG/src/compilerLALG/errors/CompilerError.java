@@ -9,6 +9,7 @@ public class CompilerError {
 	
 	public static final int LEXICAL = 0;
 	public static final int SYNTATIC = 1;
+	public static final int SEMANTIC = 2;
 	
 	private int errorType;
 	private Token token;
@@ -21,6 +22,7 @@ public class CompilerError {
 	 * 				   <ul>
 	 * 					 <li>LEXICAL</li>
 	 * 					 <li>SYNTATIC</li>
+	 * 					 <li>SEMANTIC</li>
 	 * 				   </ul>
 	 * @param token O token que originou o erro
 	 * @param errorMessage A mensagem de Erro
@@ -58,6 +60,7 @@ public class CompilerError {
 		switch (errorType) {
 			case LEXICAL:  return "Erro Léxico";
 			case SYNTATIC: return "Erro Sintático";
+			case SEMANTIC: return "Erro Semântico";
 			default:       return "Erro Desconhecido";
 		}
 	}
@@ -79,9 +82,7 @@ public class CompilerError {
 	@Override
 	public boolean equals(Object o) {
 		Token token = (Token) o;
-		System.out.println("adsl");
 		return token.equals(this.token);
-		//return false;
 	}
 
 }

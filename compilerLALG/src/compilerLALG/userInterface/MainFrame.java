@@ -11,7 +11,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -22,7 +25,6 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -40,6 +42,7 @@ import javax.swing.table.TableCellRenderer;
 import compilerLALG.errors.CompilerError;
 import compilerLALG.lexical.Lexical;
 import compilerLALG.lexical.Token;
+import compilerLALG.semantic.Semantic;
 import compilerLALG.syntactic.Syntactic;
 import compilerLALG.userInterface.texteditor.LinePainter;
 import compilerLALG.userInterface.texteditor.TextLineNumber;
@@ -63,6 +66,7 @@ public class MainFrame extends JFrame {
 	private JTable errorsTable;
 	
 	private JTextArea txSource;
+	private JTextArea txLog;
 	
 	private JLabel lblCarretPosition;
 	
@@ -74,6 +78,7 @@ public class MainFrame extends JFrame {
 	
 	private Lexical lexical;
 	private Syntactic syntactic;
+	private Semantic semantic;
 	
 	private ArrayList<Boolean> errors;
 	
@@ -87,6 +92,13 @@ public class MainFrame extends JFrame {
 				
 		initialize();
 		setListeners();
+		
+		ReadFile readFile = new ReadFile(new File(getClass().getResource("/tests/correto.txt").getFile()));
+		String contentFile = readFile.getContenFile();
+		contentFile = contentFile.replaceAll("\\t", "        ");
+		txSource.setText(contentFile);
+		compile();
+		System.exit(0);
 						
 	}
 
@@ -181,9 +193,17 @@ public class MainFrame extends JFrame {
 		errorsTable.getColumnModel().getColumn(2).setPreferredWidth(150);
 		errorsTable.getColumnModel().getColumn(3).setPreferredWidth(250);		
 		
+		JScrollPane errorMessagesPanel = new JScrollPane();
+		errorMessagesPanel.setViewportView(errorsTable);
+		tabbedPane.addTab("Mensagens de Erros", errorMessagesPanel);
+		
 		JScrollPane logPanel = new JScrollPane();
-		logPanel.setViewportView(errorsTable);
-		tabbedPane.addTab("Log de Erros", logPanel);
+		txLog = new JTextArea();
+		txLog.setLineWrap(true);
+		txLog.setWrapStyleWord(true);
+		txLog.setEditable(false);
+		logPanel.setViewportView(txLog);
+		tabbedPane.addTab("Log de Execução", logPanel);
 		
 		GroupLayout layout = new GroupLayout(contentPanel);
 		layout.setHorizontalGroup(
@@ -384,6 +404,8 @@ public class MainFrame extends JFrame {
 			String title = "Compilador LALG";
 			title = title + " [ " + fileChooser.getSelectedFile().getAbsolutePath() + " ]"; 
 			setTitle(title);
+			
+			addLogMessage("Arquivo fonte aberto: " + fileChooser.getSelectedPathFile());
 		}
 		
 	}
@@ -404,6 +426,8 @@ public class MainFrame extends JFrame {
 			title = title + " [ " + fileChooser.getSelectedFile().getAbsolutePath() + " ]"; 
 			setTitle(title);
 			
+			addLogMessage("Arquivo fonte salvo: " + fileChooser.getSelectedPathFile());
+						
 		}
 		
 	}
@@ -421,15 +445,25 @@ public class MainFrame extends JFrame {
 		removeAllTableRows(errorsTable);
 		errors.removeAll(errors);
 		
+		long start = System.currentTimeMillis();
+		addLogMessage("Processo de compilação inciado");
+		
 		success = lexicalAnalyzer();
-		if(success) success = syntacticAnalyzer();
-								
-		if(success) {
-			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);
-		}
-		else {
-			JOptionPane.showMessageDialog(this, "Compilação retornou erro", "Erro ao compilar", JOptionPane.ERROR_MESSAGE);
-		}
+		success = syntacticAnalyzer() || success;
+		success = semanticAnalyzer() || success;
+				
+		long end = System.currentTimeMillis();
+		String delta = String.format("%.3f", (end - start) / 1000.0);
+		
+		if(success) addLogMessage("Processo de compilação finalizado com sucesso em " + delta + " segundos");
+		else addLogMessage("Processo de compilação finalizado com falha em " + delta + " segundos");
+			
+//		if(success) {
+//			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);
+//		}
+//		else {
+//			JOptionPane.showMessageDialog(this, "Compilação retornou erro", "Erro ao compilar", JOptionPane.ERROR_MESSAGE);
+//		}
 		
 	}
 	
@@ -440,10 +474,9 @@ public class MainFrame extends JFrame {
 	 */
 	private boolean lexicalAnalyzer() {
 		
-		lexical = new Lexical();
-		
 		if(txSource.getText() == null || txSource.getText().isEmpty()) return true;
-		
+				
+		lexical = new Lexical();
 		lexical.execute(txSource.getText());
 		
 		ArrayList<Token> tokens = lexical.getTokens();
@@ -466,7 +499,10 @@ public class MainFrame extends JFrame {
 			
 			++index;
 		}
-				
+		
+		if(lexicalErrors.size() == 0) addLogMessage("Análise Léxica realizada com sucesso"); 			
+		else addLogMessage("Análise Léxica realizada com " + lexicalErrors.size() + " erros");
+						
 		return (!errors.contains(true));
 		
 	}
@@ -485,9 +521,23 @@ public class MainFrame extends JFrame {
 		
 		ArrayList<CompilerError> syntaticErrors = syntactic.getSyntaticErrors(); 
 		setErrors(syntaticErrors);
+		
+		if(syntaticErrors.size() == 0) addLogMessage("Análise Sintática realizada com sucesso"); 			
+		else addLogMessage("Análise Sintática realizada com " + syntaticErrors.size() + " erros");
 				
 		return syntaticErrors.size() == 0;
 		
+	}
+		
+	private boolean semanticAnalyzer() {
+				
+		ArrayList<Token> tokens = lexical.getTokensWithoutComment();
+		tokens.add(new Token("$", 0, 0));
+		
+		semantic = new Semantic();
+		semantic.execute(tokens);
+		
+		return true;
 	}
 	
 	/**
@@ -553,6 +603,11 @@ public class MainFrame extends JFrame {
 		
 	}
 
+	private void addLogMessage(String message) {
+		String now = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date());
+		txLog.append(now + " - " + message + "\n");
+	}
+	
 	/**
 	 * Encerra a execução do programa
 	 */

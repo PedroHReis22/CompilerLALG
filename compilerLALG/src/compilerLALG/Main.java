@@ -19,14 +19,13 @@ public class Main {
 		EventQueue.invokeLater(new Runnable() {
 			
 			public void run() {
+				
 				try {
 					
 					MainFrame mainFrame = new MainFrame();
 					mainFrame.setVisible(true);
 					
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+				} catch (Exception e) { e.printStackTrace(); }
 			}
 			
 		});

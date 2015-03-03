@@ -1,0 +1,56 @@
+package compilerLALG.semantic;
+
+import java.util.ArrayList;
+
+public class SemanticTable {
+	
+	private ArrayList<SemanticContext> contexts;
+	
+	public SemanticTable() {
+		contexts = new ArrayList<>();
+	}
+	
+	public boolean addSemanticContext(SemanticContext context) {
+		
+		for(SemanticContext c : contexts) {			
+			if(c.getLexeme().equals(context.getLexeme()) && c.getCategory() == context.getCategory() && c.getScope() == context.getScope()) return false;
+		}
+		
+		contexts.add(context);
+		return true;
+		
+	}
+		
+	public ArrayList<SemanticContext> getContexts() {
+		return contexts;
+	}
+	
+	public void reset() {
+		contexts.removeAll(contexts);
+	}
+	
+	public ArrayList<SemanticContext> getLocalVars() {
+		
+		ArrayList<SemanticContext> localVars = new ArrayList<>();
+		
+		for(SemanticContext c : contexts) {
+			if(c.getCategory() == SemanticContext.CATEGORY_VAR && c.getScope() == SemanticContext.SCOPE_LOCAL) {
+				localVars.add(c);
+			}
+		}
+		
+		return localVars;
+		
+	}
+	
+	@Override
+	public String toString() {
+		
+		StringBuffer buffer = new StringBuffer();
+		contexts.forEach(c -> buffer.append(c.toString() + "\n"));
+			
+		return buffer.toString();
+		
+	}
+
+}

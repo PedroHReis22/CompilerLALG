@@ -97,7 +97,7 @@ public class Syntactic {
 		simbol = stack.pop();
 								
 		while(!stack.isEmpty()) {
-			
+									
 			if(simbol.startsWith("<") && simbol.endsWith(">") && simbol.length() > 2){ //é um simbolo não terminal
 				
 				int nt = NotTerminal.getIndex(simbol);

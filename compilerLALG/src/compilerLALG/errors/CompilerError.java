@@ -10,6 +10,7 @@ public class CompilerError {
 	public static final int LEXICAL = 0;
 	public static final int SYNTATIC = 1;
 	public static final int SEMANTIC = 2;
+	public static final int WARNING = 3;
 	
 	private int errorType;
 	private Token token;
@@ -23,6 +24,7 @@ public class CompilerError {
 	 * 					 <li>LEXICAL</li>
 	 * 					 <li>SYNTATIC</li>
 	 * 					 <li>SEMANTIC</li>
+	 * 					 <li>WARNING</li>
 	 * 				   </ul>
 	 * @param token O token que originou o erro
 	 * @param errorMessage A mensagem de Erro
@@ -61,6 +63,7 @@ public class CompilerError {
 			case LEXICAL:  return "Erro Léxico";
 			case SYNTATIC: return "Erro Sintático";
 			case SEMANTIC: return "Erro Semântico";
+			case WARNING:  return "Warning";
 			default:       return "Erro Desconhecido";
 		}
 	}

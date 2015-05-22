@@ -15,7 +15,7 @@ public class Main {
 	 * @param args Argumentos passados por linha de comando. Estes argumentos são ignorados
 	 */
 	public static void main(String[] args) {
-		
+								
 		EventQueue.invokeLater(new Runnable() {
 			
 			public void run() {

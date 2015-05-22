@@ -43,6 +43,46 @@ public class SemanticTable {
 		
 	}
 	
+	public boolean exists(String lexeme, int token, int category) {
+		
+		for(SemanticContext context : contexts) {
+			if(context.getLexeme().equals(lexeme) && context.getTokenType() == token && context.getCategory() == category) {
+				return true;
+			}
+		}
+		
+		return false;
+		
+	}
+	
+	public SemanticContext get(String lexeme, int token, int category) {
+		
+		for(SemanticContext context : contexts) {
+			if(context.getLexeme().equals(lexeme) && context.getTokenType() == token && context.getCategory() == category) {
+				return context;
+			}
+		}
+		
+		return null;
+	}
+	
+	public SemanticContext get(String lexeme, int token, int category, int scope) {
+		
+		for(SemanticContext context : contexts) {
+			if(context.getLexeme().equals(lexeme) && context.getTokenType() == token && context.getCategory() == category && context.getScope() == scope) {
+				return context;
+			}
+		}
+		
+		return null;
+	}
+	
+	public ArrayList<SemanticContext> removeLocalVars() {
+		ArrayList<SemanticContext> localVars = getLocalVars();
+		contexts.removeAll(localVars);
+		return localVars;
+	}
+	
 	@Override
 	public String toString() {
 		

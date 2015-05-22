@@ -25,6 +25,7 @@ import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -39,16 +40,19 @@ import javax.swing.event.CaretListener;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 
+import compilerLALG.codeGeneration.CodeGeneration;
 import compilerLALG.errors.CompilerError;
 import compilerLALG.lexical.Lexical;
 import compilerLALG.lexical.Token;
 import compilerLALG.semantic.Semantic;
+import compilerLALG.semantic.SemanticTable;
 import compilerLALG.syntactic.Syntactic;
 import compilerLALG.userInterface.texteditor.LinePainter;
 import compilerLALG.userInterface.texteditor.TextLineNumber;
 import compilerLALG.util.Clipboard;
 import compilerLALG.util.ReadFile;
 import compilerLALG.util.SaveFile;
+import execute.ExecuteFrame;
 
 /**
  * Frame principal da aplicação
@@ -67,6 +71,7 @@ public class MainFrame extends JFrame {
 	
 	private JTextArea txSource;
 	private JTextArea txLog;
+	private JTextArea txBytecode;
 	
 	private JLabel lblCarretPosition;
 	
@@ -79,6 +84,7 @@ public class MainFrame extends JFrame {
 	private Lexical lexical;
 	private Syntactic syntactic;
 	private Semantic semantic;
+	private CodeGeneration codeGeneration;
 	
 	private ArrayList<Boolean> errors;
 	
@@ -92,13 +98,6 @@ public class MainFrame extends JFrame {
 				
 		initialize();
 		setListeners();
-		
-		ReadFile readFile = new ReadFile(new File(getClass().getResource("/tests/correto.txt").getFile()));
-		String contentFile = readFile.getContenFile();
-		contentFile = contentFile.replaceAll("\\t", "        ");
-		txSource.setText(contentFile);
-		compile();
-		System.exit(0);
 						
 	}
 
@@ -269,6 +268,18 @@ public class MainFrame extends JFrame {
 		
 		tablePanel.setViewportView(lexemeTable);
 		contentPanel.setLayout(layout);
+		
+		JScrollPane bytecodePane = new JScrollPane();
+		tabbedPane.addTab("ByteCode", bytecodePane);
+		
+		txBytecode = new JTextArea();
+		txBytecode.setEditable(false);
+		txBytecode.setLineWrap(true);
+		txBytecode.setWrapStyleWord(true);
+		bytecodePane.setViewportView(txBytecode);
+		
+		TextLineNumber textLineNumber = new TextLineNumber(txBytecode);
+		bytecodePane.setRowHeaderView(textLineNumber);
 				
 		JToolBar toolBar = new JToolBar();
 		getContentPane().add(toolBar, BorderLayout.NORTH);
@@ -448,22 +459,57 @@ public class MainFrame extends JFrame {
 		long start = System.currentTimeMillis();
 		addLogMessage("Processo de compilação inciado");
 		
-		success = lexicalAnalyzer();
-		success = syntacticAnalyzer() || success;
-		success = semanticAnalyzer() || success;
+		try{
+			success = lexicalAnalyzer();			
+			success = syntacticAnalyzer() && success;
+			success = semanticAnalyzer() && success;
+			
+		} catch(Exception e) {
+			success = false;
+		}	
+		
+		boolean b = false;
+		
+		if(success) b = codeGeneration();
 				
 		long end = System.currentTimeMillis();
 		String delta = String.format("%.3f", (end - start) / 1000.0);
 		
 		if(success) addLogMessage("Processo de compilação finalizado com sucesso em " + delta + " segundos");
 		else addLogMessage("Processo de compilação finalizado com falha em " + delta + " segundos");
-			
-//		if(success) {
-//			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);
-//		}
-//		else {
-//			JOptionPane.showMessageDialog(this, "Compilação retornou erro", "Erro ao compilar", JOptionPane.ERROR_MESSAGE);
-//		}
+		
+		if(b) {
+			try {
+				new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						try {
+							Thread.currentThread().sleep(1500);
+						} catch (InterruptedException e) { e.printStackTrace(); }
+						execute();
+						
+					}
+				}).start();
+				
+			} catch (Exception e) { e.printStackTrace(); }
+											
+		}
+					
+		if(success) {
+			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);
+		}
+		else {
+			JOptionPane.showMessageDialog(this, "Compilação retornou erro", "Erro ao compilar", JOptionPane.ERROR_MESSAGE);
+		}
+		
+	}
+	
+	private void execute() {
+		
+		ExecuteFrame executeFrame = new ExecuteFrame(codeGeneration.getC());
+		executeFrame.setLocationRelativeTo(this);
+		executeFrame.setVisible(true);
 		
 	}
 	
@@ -531,13 +577,25 @@ public class MainFrame extends JFrame {
 		
 	private boolean semanticAnalyzer() {
 				
-		ArrayList<Token> tokens = lexical.getTokensWithoutComment();
+		@SuppressWarnings("unchecked")
+		ArrayList<Token> tokens = (ArrayList<Token>) lexical.getTokensWithoutComment().clone();
 		tokens.add(new Token("$", 0, 0));
-		
+				
 		semantic = new Semantic();
 		semantic.execute(tokens);
 		
-		return true;
+		ArrayList<CompilerError> semanticErrors = semantic.getSemanticErrors();
+		setErrors(semanticErrors);
+		
+		if(semanticErrors.size() == 0) addLogMessage("Análise Sintática realizada com sucesso"); 			
+		else addLogMessage("Análise Sintática realizada com " + semanticErrors.size() + " erros");
+		
+		int numErrors = 0;
+		for(CompilerError error : semanticErrors) {
+			if(error.getErrorType() == CompilerError.SEMANTIC) ++numErrors;
+		}
+		
+		return numErrors == 0;
 	}
 	
 	/**
@@ -563,6 +621,19 @@ public class MainFrame extends JFrame {
 			
 		}
 				
+	}
+	
+	private boolean codeGeneration() {
+		
+		ArrayList<Token> tokens = lexical.getTokensWithoutComment();
+		SemanticTable semanticTable = semantic.getSemanticTable();
+		
+		codeGeneration = new CodeGeneration();
+		boolean success = codeGeneration.execute(tokens, semanticTable, semantic);
+		
+		if(success) setBytecode();
+		
+		return success;
 	}
 	
 	/**
@@ -608,11 +679,16 @@ public class MainFrame extends JFrame {
 		txLog.append(now + " - " + message + "\n");
 	}
 	
+	private void setBytecode() {
+		txBytecode.setText(codeGeneration.toString());
+	}
+	
 	/**
 	 * Encerra a execução do programa
 	 */
 	private void exit() {
 		System.exit(0);
-	}	
+	}
+	
 	
 }

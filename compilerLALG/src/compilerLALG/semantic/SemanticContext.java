@@ -1,9 +1,11 @@
 package compilerLALG.semantic;
 
+import compilerLALG.lexical.Token;
+
 public class SemanticContext {
 	
-	public static final int TOKEN_ID = 0;
-	public static final int TOKEN_NUM = 1;
+	public static final int TOKEN_TYPE_ID = 0;
+	public static final int TOKEN_TYPE_NUM = 1;
 	
 	public static final int CATEGORY_VAR = 0;
 	public static final int CATEGORY_PROC = 1;
@@ -18,21 +20,23 @@ public class SemanticContext {
 	public static final int SCOPE_LOCAL = 1;
 
 	private String lexeme;
-	private int token;
+	private int tokenType;
 	private int category;
 	private int type;
 	private double value;
 	private int scope;
 	private boolean utilized;
+	private Token token;
 	
-	public SemanticContext(String lexeme, int token, int category, int type, double value, int scope, boolean utilized) {
+	public SemanticContext(String lexeme, int tokenType, int category, int type, double value, int scope, boolean utilized, Token token) {
 		this.lexeme = lexeme;
-		this.token = token;
+		this.tokenType = tokenType;
 		this.category = category;
 		this.type = type;
 		this.value = value;
 		this.scope = scope;
 		this.utilized = utilized;
+		this.token = token;
 	}
 	
 	public String getLexeme() {
@@ -43,12 +47,12 @@ public class SemanticContext {
 		this.lexeme = lexeme;
 	}
 	
-	public int getToken() {
-		return token;
+	public int getTokenType() {
+		return tokenType;
 	}
 	
-	public void setToken(int token) {
-		this.token = token;
+	public void setTokenType(int tokenType) {
+		this.tokenType = tokenType;
 	}
 	
 	public int getCategory() {
@@ -90,6 +94,14 @@ public class SemanticContext {
 	public void setUtilized(boolean utilized) {
 		this.utilized = utilized;
 	}
+	
+	public Token getToken() {
+		return token;
+	}
+	
+	public void setToken(Token token) {
+		this.token = token;
+	}
 
 	@Override
 	public String toString() {
@@ -100,10 +112,10 @@ public class SemanticContext {
 		String scp[] = new String[]{"global", "local"};
 		
 		if(value == Double.MAX_VALUE)
-			return "lexeme=" + lexeme + ", token=" + tok[token] + ", category=" + cat[category] + ", type=" + typ[type] 
+			return "lexeme=" + lexeme + ", token=" + tok[tokenType] + ", category=" + cat[category] + ", type=" + typ[type] 
 					 + ", value=undefined"  + ", scope=" + scp[scope] + ", utilized=" + utilized;
 		
-		return "lexeme=" + lexeme + ", token=" + tok[token] + ", category=" + cat[category] + ", type=" + typ[type] 
+		return "lexeme=" + lexeme + ", token=" + tok[tokenType] + ", category=" + cat[category] + ", type=" + typ[type] 
 				 + ", value=" + value + ", scope=" + scp[scope] + ", utilized=" + utilized;
 	}
 	

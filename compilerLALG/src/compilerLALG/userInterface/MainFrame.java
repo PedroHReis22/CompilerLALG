@@ -52,6 +52,7 @@ import compilerLALG.userInterface.texteditor.TextLineNumber;
 import compilerLALG.util.Clipboard;
 import compilerLALG.util.ReadFile;
 import compilerLALG.util.SaveFile;
+
 import execute.ExecuteFrame;
 
 /**
@@ -464,37 +465,31 @@ public class MainFrame extends JFrame {
 			success = syntacticAnalyzer() && success;
 			success = semanticAnalyzer() && success;
 			
+			
+			
 		} catch(Exception e) {
 			success = false;
 		}	
 		
-		boolean b = false;
-		
-		if(success) b = codeGeneration();
+		if(success) {
+			boolean b = codeGeneration();
+			if(b) {
+				new Thread(new Runnable() {
+					
+					@Override
+					public void run() {
+						execute();		
+					}
+				}).start();
+									
+			}
+		}
 				
 		long end = System.currentTimeMillis();
 		String delta = String.format("%.3f", (end - start) / 1000.0);
 		
 		if(success) addLogMessage("Processo de compilação finalizado com sucesso em " + delta + " segundos");
 		else addLogMessage("Processo de compilação finalizado com falha em " + delta + " segundos");
-		
-		if(b) {
-			try {
-				new Thread(new Runnable() {
-					
-					@Override
-					public void run() {
-						try {
-							Thread.currentThread().sleep(1500);
-						} catch (InterruptedException e) { e.printStackTrace(); }
-						execute();
-						
-					}
-				}).start();
-				
-			} catch (Exception e) { e.printStackTrace(); }
-											
-		}
 					
 		if(success) {
 			JOptionPane.showMessageDialog(this, "Compilação retornou sucesso", "Compilação Completa", JOptionPane.PLAIN_MESSAGE);

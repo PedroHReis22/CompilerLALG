@@ -4,9 +4,9 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
@@ -15,60 +15,57 @@ public class ExecuteFrame extends JFrame {
 
 	private static final long serialVersionUID = 1L;
 
-	private JTextArea txExecutation;
+	JTextArea txExecutation;
 
 	private ArrayList<String> C;
 	private Double[] D;
 	private int s;
-	
+
 	public ExecuteFrame(ArrayList<String> C) {
-		
-		synchronized (C) {
-			
-		}
-		
-		initComponents();
-						
+
+		//initComponents();
+
 		this.C = C;
 		D = new Double[C.size()];
 		
 		interpretationByteCode();
-		
-		txExecutation.append("Execução Finalizada");
+		System.out.println("terminou");
 	}
 
-	private synchronized void initComponents() {
+	private void initComponents() {
 
-		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 650, 400);
-		setTitle("Execução");
 
 		JPanel contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 
-		txExecutation = new JTextArea();
-		txExecutation.setBackground(Color.BLACK);
-		contentPane.add(txExecutation, BorderLayout.CENTER);
-		
-		txExecutation.setForeground(Color.WHITE);
-		txExecutation.setFont(new Font("Consolas", Font.BOLD, 14));
-		
-		requestFocus();
-		toFront();
+		JTextArea textArea = new JTextArea();
+		textArea.setBackground(Color.BLACK);
+		contentPane.add(textArea, BorderLayout.CENTER);
+
+		textArea.setForeground(Color.WHITE);
+		textArea.setFont(new Font("Consolas", Font.BOLD, 14));
 	}
-	
+
 	public void interpretationByteCode() {
-		
+
 		for (int t = 0; t < D.length; t++) {
 			D[t] = 0.0;
 		}
 		
+
 		String aux = null;
 		s = 0;
+		double saidaPadrao = 21.0;
+		double entradaPadrao = 5.0;
 
 		for (int i = 0; i < C.size(); i++) {
+			
+			
+			
 
 			aux = C.get(i);
 			String[] a = aux.split(" ");
@@ -92,38 +89,31 @@ public class ExecuteFrame extends JFrame {
 
 			if (a[0].equals("LEIT")) {
 				s = s + 1;
-				int c = Integer.parseInt(getValue());
-				txExecutation.append("Leitura de Inteiro: \n" + c + "\n");
-				D[s] = (double) c;
+				D[s] = new Scanner(System.in).nextDouble();
 			}
 
 			if (a[0].equals("LERL")) {
 				s = s + 1;
-				double c = Double.parseDouble(getValue());
-				txExecutation.append("Leitura de Real: \n" + c + "\n");
-				D[s] = c;
+				D[s] = new Scanner(System.in).nextDouble();
 			}
 			
 			if (a[0].equals("LEBL")) {
 				s = s + 1;
-				boolean c = Boolean.parseBoolean(getValue());
-				txExecutation.append("Leitura de Booleano: \n" + c + "\n");
-				if(c) D[s] = 1.0;
-				else D[s] = 0.0;
+				D[s] = new Scanner(System.in).nextDouble();
 			}
 
 			if (a[0].equals("IMPR")) {
-				txExecutation.append(D[s] + "\n");
+				System.out.println(D[s]);
 				s = s - 1;
 			}
 
 			if (a[0].equals("IMPC")) {
-				txExecutation.append(D[s] + "\n");
+				System.out.println(D[s]);
 				s = s - 1;
 			}
 
 			if (a[0].equals("IMPE")) {
-				txExecutation.append(D[s] + "\n");
+				System.out.println(D[s]);
 				s = s - 1;
 			}
 
@@ -270,6 +260,17 @@ public class ExecuteFrame extends JFrame {
                 s = s - 1;
 			}
 			
+//			System.out.println("bytecode = " + C.get(i));
+//			toString();
+//			System.out.println("s = " + s);
+//			System.out.println("----------------");
+//			new Scanner(System.in).nextLine();
+			
+//			System.out.println(this);
+//			System.out.println(s);
+//			System.out.println("----------------");
+//			new Scanner(System.in).nextLine();
+
 		}
 				
 	}
@@ -279,18 +280,6 @@ public class ExecuteFrame extends JFrame {
 		for(int i = 0; i <= s; ++i) System.out.println(i + " ---> " + D[i]);
 		
 		return "";
-	}
-		
-	public String getValue() {
-		
-		String s;
-		
-		do{
-			s = JOptionPane.showInputDialog("Entre com o valor: ");
-		} while(s == null || s.isEmpty());
-					
-		return s;
-		
 	}
 
 }
